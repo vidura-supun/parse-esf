@@ -43,6 +43,10 @@ def parse_esf_jsonl(input_path, output_path):
         result_inner = result.get("result", {})
         paths = extract_paths(evt_data)
 
+        exec_data = evt_data.get("exec", {})
+        args = exec_data.get("args", [])
+        cmdline = " ".join(args) if args else ""
+
         rows.append({
             "time": event.get("time", ""),
             "mach_time": event.get("mach_time", ""),
@@ -66,6 +70,7 @@ def parse_esf_jsonl(input_path, output_path):
             "process_codesigning_flags": proc.get("codesigning_flags", ""),
             "process_start_time": proc.get("start_time", ""),
             "event_key": list(evt_data.keys())[0] if evt_data else "",
+            "cmdline": cmdline,
             "paths": " | ".join(paths) if paths else "",
             "raw_event": json.dumps(evt_data),
         })
@@ -74,7 +79,7 @@ def parse_esf_jsonl(input_path, output_path):
         print("No events parsed.")
         return
 
-    priority = ["time", "process_pid", "process_start_time", "process_exe", "event_key", "paths", "raw_event"]
+    priority = ["time", "process_pid", "process_start_time", "process_exe", "event_key", "cmdline", "paths", "raw_event"]
     rest = [k for k in rows[0].keys() if k not in priority]
     fieldnames = priority + rest
 
