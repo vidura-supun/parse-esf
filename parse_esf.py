@@ -17,8 +17,10 @@ def extract_paths(obj, found=None):
 def parse_esf_jsonl(input_path, output_path):
     rows = []
 
-    with open(input_path, "r", encoding="utf-16") as f:
-        content = f.read()
+    with open(input_path, "rb") as f:
+        raw = f.read()
+    encoding = "utf-16" if raw[:2] in (b'\xff\xfe', b'\xfe\xff') else "utf-8"
+    content = raw.decode(encoding)
 
     decoder = json.JSONDecoder()
     pos = 0
@@ -32,6 +34,10 @@ def parse_esf_jsonl(input_path, output_path):
         try:
             event, pos = decoder.raw_decode(content, pos)
         except json.JSONDecodeError:
+            # Skip a single bad character and retry, but if we're near EOF it's a truncated event
+            remaining = content[pos:].lstrip()
+            if remaining.startswith('{'):
+                break  # truncated final event, stop here
             pos += 1
             continue
 
