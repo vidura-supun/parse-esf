@@ -1,4 +1,5 @@
 import json, csv
+from datetime import datetime, timezone
 
 
 def extract_paths(obj, found=None):
@@ -47,8 +48,18 @@ def parse_esf_jsonl(input_path, output_path):
         args = exec_data.get("args", [])
         cmdline = " ".join(args) if args else ""
 
+        raw_time = event.get("time", "")
+        try:
+            dt_utc = datetime.fromtimestamp(float(raw_time), tz=timezone.utc)
+            date_time_utc = dt_utc.strftime("%Y-%m-%d %H:%M:%S.%f UTC")
+            date_time_local = dt_utc.astimezone().strftime("%Y-%m-%d %H:%M:%S.%f %Z")
+        except (ValueError, TypeError, OSError):
+            date_time_utc = ""
+            date_time_local = ""
+
         rows.append({
-            "time": event.get("time", ""),
+            "date_time_local": date_time_local,
+            "date_time_utc": date_time_utc,
             "mach_time": event.get("mach_time", ""),
             "global_seq_num": event.get("global_seq_num", ""),
             "seq_num": event.get("seq_num", ""),
@@ -79,7 +90,7 @@ def parse_esf_jsonl(input_path, output_path):
         print("No events parsed.")
         return
 
-    priority = ["time", "process_pid", "process_start_time", "process_exe", "event_key", "cmdline", "paths", "raw_event"]
+    priority = ["date_time_local", "date_time_utc", "process_pid", "process_start_time", "process_exe", "event_key", "cmdline", "paths", "raw_event"]
     rest = [k for k in rows[0].keys() if k not in priority]
     fieldnames = priority + rest
 

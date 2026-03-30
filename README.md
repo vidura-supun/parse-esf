@@ -22,7 +22,8 @@ python parse_esf.py esf_events.jsonl esf_events.csv
 
 | Field | Description |
 |---|---|
-| `time` | Event timestamp |
+| `date_time_local` | Event timestamp in local time |
+| `date_time_utc` | Event timestamp in UTC |
 | `mach_time` | Mach absolute time |
 | `global_seq_num` | Global sequence number |
 | `seq_num` | Per-event sequence number |
