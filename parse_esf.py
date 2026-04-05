@@ -26,6 +26,8 @@ def extract_paths(obj, found=None):
 def parse_time(raw_time):
     """Parse ESF ISO 8601 timestamp (may have nanoseconds) to (utc_str, local_str)."""
     try:
+        if not raw_time:
+            return "", ""
         ts = raw_time.rstrip("Z")
         if "." in ts:
             base, frac = ts.split(".", 1)
@@ -80,8 +82,9 @@ def build_process_tree(raw_events):
             if cmdline != "": existing["cmdline"]    = cmdline
             if start_time != "": existing["start_time"] = start_time
 
+    # Pass 1: seed known processes from the 'process' field of every event (establishes roots)
     for event in raw_events:
-        proc = event.get("process", {})
+        proc  = event.get("process", {})
         audit = proc.get("audit_token", {})
         upsert(
             pid        = audit.get("pid"),
@@ -91,6 +94,8 @@ def build_process_tree(raw_events):
             start_time = proc.get("start_time", ""),
         )
 
+    # Pass 2: fork/exec events override with authoritative child/target data
+    for event in raw_events:
         evt_data = event.get("event", {})
         key = list(evt_data.keys())[0] if evt_data else None
 
